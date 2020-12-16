@@ -1,0 +1,14 @@
+# -*- mode: gitignore; coding: utf-8; -*-
+# 
+# .gitignore
+#
+
+# Exuecutable file
+go-ls
+go-ls.exe
+
+# working file
+*~
+
+# Emacs temporary file
+\#*#
