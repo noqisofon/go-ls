@@ -12,3 +12,4 @@ go-ls.exe
 
 # Emacs temporary file
 \#*#
+*.bak

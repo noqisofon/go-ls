@@ -4,6 +4,7 @@ import (
     "fmt"
     "path/filepath"
     "os"
+    "strconv"
     "strings"
 )
 
@@ -152,12 +153,30 @@ func decode_switches(argv []string, argc int) int {
     line_length := 80
 
     {
-        columns := os.Getenv( "COLUMNS" )
-        if columns && !set_line_length( columns ) {
-            // error( 0, 0,
-            //     
-            // )
+        raw_columns := os.Getenv( "COLUMNS" )
+        if raw_columns && !set_line_length( raw_columns ) {
+            error( 0, 0, "ignoring invalid width in environment variable COLUMNS: %s", quote( raw_columns) )
         }
+    }
+
+    {
+        raw_tabsize := os.Getenv( "TABSIZE" )
+        tabsize      = 8
+        if raw_tabsize {
+            var tmp uintmax_t
+
+            tmp, err = strconv.Atoi( raw_tabsize )
+            if err != nil {
+                tabsize = tmp
+            } else {
+                error( 0, 0, "ignoring invalid tab size in environment variable TABSIZE: %s", quote( raw_tabsize ) )
+            }
+        }
+    }
+
+    for {
+        c, oi := getopt_long( argc, argv, "abcdfghiklmnopqrstuvw:xABCDFGHI:LNQRST:UXZ1", long_options, oi )
+	
     }
 
     return 0
