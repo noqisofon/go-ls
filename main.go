@@ -2,10 +2,19 @@ package main
 
 import (
     "fmt"
+    "path/filepath"
     "os"
-
-    flag "github.com/spf13/pflag"
+    "strings"
 )
+
+var stdout_file_no : int = os.Stdout.Fd()
+
+const (
+    EXIT_SUCCESS = 0
+    EXIT_FAILURE = 1
+)
+
+type size_t uint
 
 type file_type int
 const (
@@ -21,43 +30,158 @@ const (
     arg_directory
 )
 
+const (
+    LS_LS          = 1
+    LS_MULTI_COL   = 2
+    LS_LONG_FORMAT = 3
+)
+var ls_mode = LS_MULTI_COL
+
+type time_type int
+const (
+    time_mtime time_type = iota    // default
+    time_ctime                     // -c
+    time_atime                     // -u
+    time_btime                     // birth time
+
+    time_num_types
+)
+var time_type time_type = time_mtime
+
+type sort_type int
+const (
+    sort_none sort_type = iota
+    sort_name
+    sort_extension
+    sort_size
+    sort_version
+    sort_time
+
+    sort_num_types
+)
+var sort_type sort_type = sort_name
+
 type file_info struct {
-    /* ファイルの名前 */
-    name   string
+    // ファイル名
+    name                string
 
-    /* リンクの名前 */
-    link_name string
+    // リンクファイル名
+    link_name           string
 
-    /* 絶対的ファイル名 */
-    absolute_name string
+    // 絶対パス
+    absolute_name       string
 
-    stat os.FileInfo
+    stat                Stat
 
-    file_type file_type
+    link_mode           mode_t
+
+    security_context    string
+
+    stat_ok             bool
+
+    link_ok             bool
+
+    access_type         access_type
+
+    has_capability      bool
+
+    quoted              int
+}
+
+
+// func (self file_info) print_name_with_quoting(symlink_target bool, stack obstack, start_col size_t) {
+//      var name string
+
+     
+// }
+
+type pending struct {
+    name              string
+    real_name         string
+    command_line_arg  bool
+    next             *pending
+}
+
+var program_name string
+var line_length  size_t
+
+func initialize_main(argv []string, argc int) {
+}
+
+func set_program_name(name string) {
+    program_name = strings.Replace( filepath.Base( name ), filepath.Ext( name ), "", -1 )
+}
+
+
+func decode_switches(argv []string, argc int) int {
+    var (
+        time_style_option   string
+        sort_type_specified bool   = false
+        kibibytes_specified bool   = false
+        qmark_funny_chars   bool   = false
+    )
+
+    switch ls_mode {
+    case LS_LS: 
+        if is_a_tty( stdout_file_no ) {
+            format            = many_per_line
+            set_quoting_style( nil, shell_escape_quoting_style )
+            qmark_funny_chars = true
+        } else {
+            format            = one_per_line
+            qmark_funny_chars = false
+        }
+        
+    case LS_MULTI_COL:
+        format                = many_per_line
+        set_quoting_style( nil, escape_quoting_style )
+
+    case LS_LONG_FORMAT*
+        format                = long_format
+        set_quoting_style( nil, escape_quoting_style )
+
+    default:
+        abort()
+    }
+
+    time_type := time_mtime
+    sort_type := sort_name
+
+    getenv_quoting_style()
+
+    line_length := 80
+
+    {
+        columns := os.Getenv( "COLUMNS" )
+        if columns && !set_line_length( columns ) {
+            // error( 0, 0,
+            //     
+            // )
+        }
+    }
+
+    return 0
 }
 
 func main() {
     var (
-    	all        bool
-	all_most   bool
-	author     bool
-	escape     bool
-	block_size uint
+        i            int
+        this_pend    pending
+        amount_files int
     )
 
-    flag.BoolVarP( &all       , "all"       , "a", false, "do not ignore entries starting with ."           )
-    flag.BoolVarP( &all_most  , "all-most"  , "A", false, "do not list implied . and .."                    )
-    flag.BoolVar(  &author    , "auther"         , false, "with -l, print the author of each file"          )
-    flag.BoolVarP( &escape    , "escape"    , "b", false, "print C-style escapes for nongraphic characters" )
-    flag.UintVar(  &block_size, "block-size"     ,     4, "with -l, scale sizes by SIZE when printing them; e.g., '--block-size=M'; see SIZE format below");
+    initialize_main( os.Args[1:], len( os.Args ) - 1 )
+    set_program_name( os.Args[0] )
 
-    flag.Parse()
+    //set_locale( LC_ALL, "" )
+    //bind_text_domain( PACKAGE, LOCALEDIR )
+    // text_domain( PACKAGE )
 
-    fmt.Println( "all       : ", all        )
-    fmt.Println( "all_most  : ", all_most   )
-    fmt.Println( "author    : ", author     )
-    fmt.Println( "escape    : ", escape     )
-    fmt.Println( "block_size: ", block_size )
+    fmt.Println( program_name )
 
-    // dir, err := os.Getwd()
+    exit_status    := EXIT_SUCCESS
+    print_dir_name := true
+    // pending_dirs   := nil
+
+    i = decode_switches( os.Args[1:], len( os.Args ) - 1  )
 }
