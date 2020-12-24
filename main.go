@@ -10,13 +10,16 @@ import (
 
 var stdout_file_no : int = os.Stdout.Fd()
 
+// プログラムにおける exit_code
 const (
     EXIT_SUCCESS = 0
     EXIT_FAILURE = 1
 )
 
+// C 言語の size_t
 type size_t uint
 
+// ファイル・タイプ
 type file_type int
 const (
     unknown file_type = iota
@@ -31,6 +34,8 @@ const (
     arg_directory
 )
 
+// ls の表示フォーマット。
+// デフォルトは横に複数表示する。
 const (
     LS_LS          = 1
     LS_MULTI_COL   = 2
@@ -38,6 +43,7 @@ const (
 )
 var ls_mode = LS_MULTI_COL
 
+// ls -l としたときに、表示される日付として、どれを表示するか
 type time_type int
 const (
     time_mtime time_type = iota    // default
@@ -49,6 +55,7 @@ const (
 )
 var time_type time_type = time_mtime
 
+// ソートする際、どれを元にソートするか
 type sort_type int
 const (
     sort_none sort_type = iota
@@ -62,6 +69,7 @@ const (
 )
 var sort_type sort_type = sort_name
 
+// ls のファイル内容構造体
 type file_info struct {
     // ファイル名
     name                string
