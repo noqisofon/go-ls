@@ -22,7 +22,7 @@ type size_t uint
 // ファイル・タイプ
 type File_type int
 const (
-    unknown File_type = iota
+    unknown        File_type = iota
     fifo
     chardev
     directory
@@ -57,7 +57,7 @@ const (
 // ソートする際、どれを元にソートするか
 type Sort_type int
 const (
-    sort_none Sort_type = iota
+    sort_none       Sort_type = iota
     sort_name
     sort_extension
     sort_size
@@ -96,7 +96,7 @@ type File_info struct {
 
     stat                Stat
 
-    file_type           File_Type
+    file_type           File_type
 
     link_mode           mode_t
 
@@ -106,7 +106,7 @@ type File_info struct {
 
     link_ok             bool
 
-    access_type         access_type
+    access_type         Access_type
 
     has_capability      bool
 
@@ -114,11 +114,41 @@ type File_info struct {
 }
 
 
-// func (self File_info) print_name_with_quoting(symlink_target bool, stack obstack, start_col size_t) {
-//      var name string
+func (self File_info) print_name_with_quoting(symlink_target bool, stack obstack, start_col size_t) {
+    var (
+        name                 string
+        color                string
 
-     
-// }
+        used_color_this_time bool
+    )
+
+    if symlink_target {
+        name = self.link_name
+    } else {
+        name = self.name
+    }
+
+    if print_with_color {
+        self.get_color_indicator( symlink_target )
+        used_color_this_time = color || is_colored( C_NORM )
+    } else {
+        used_color_this_time = false
+    }
+
+    quoted_name, len := quote_name( name, filename_quoting_options, self.quoted, color, !symlink_target, stack, self.ansolute_name )
+
+    process_signals()
+
+    if used_color_this_time {
+        preq_non_filename_text()
+
+        if line_length && ( start_col / line_length != ( start_col + len - 1 ) / line_length ) {
+            put_indicator( color_indicator[C_CLR_TO_EQL] )
+        }
+    }
+
+    return len
+}
 
 type Pending struct {
     name              string
