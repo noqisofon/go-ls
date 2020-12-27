@@ -67,12 +67,20 @@ const (
     sort_num_types
 )
 
+type Ignore_mode int
+const (
+    IGNORE_DEFAULT        Ignore_mode = iota
+    IGNORE_DOT_AND_DOTDOT
+    IGNORE_MINIMAL
+)
 
 var (
-    ls_mode   int       = LS_MULTI_COL
+    ls_mode     int         = LS_MULTI_COL
 
-    time_type Time_type = time_mtime
-    sort_type Sort_type = sort_name
+    time_type   Time_type   = time_mtime
+    sort_type   Sort_type   = sort_name
+
+    ignore_mode Ignore_mode = IGNORE_DEFAULT
 )
 
 // ls のファイル内容構造体
