@@ -8,7 +8,7 @@ import (
     "strings"
 )
 
-var stdout_file_no : int = os.Stdout.Fd()
+var stdout_file_no uintptr = os.Stdout.Fd()
 
 // プログラムにおける exit_code
 const (
@@ -20,9 +20,9 @@ const (
 type size_t uint
 
 // ファイル・タイプ
-type file_type int
+type File_type int
 const (
-    unknown file_type = iota
+    unknown File_type = iota
     fifo
     chardev
     directory
@@ -41,24 +41,23 @@ const (
     LS_MULTI_COL   = 2
     LS_LONG_FORMAT = 3
 )
-var ls_mode = LS_MULTI_COL
 
 // ls -l としたときに、表示される日付として、どれを表示するか
-type time_type int
+type Time_type int
 const (
-    time_mtime time_type = iota    // default
+    time_mtime Time_type = iota    // default
     time_ctime                     // -c
     time_atime                     // -u
     time_btime                     // birth time
 
     time_num_types
 )
-var time_type time_type = time_mtime
+
 
 // ソートする際、どれを元にソートするか
-type sort_type int
+type Sort_type int
 const (
-    sort_none sort_type = iota
+    sort_none Sort_type = iota
     sort_name
     sort_extension
     sort_size
@@ -67,10 +66,17 @@ const (
 
     sort_num_types
 )
-var sort_type sort_type = sort_name
+
+
+var (
+    ls_mode   int       = LS_MULTI_COL
+
+    time_type Time_type = time_mtime
+    sort_type Sort_type = sort_name
+)
 
 // ls のファイル内容構造体
-type file_info struct {
+type File_info struct {
     // ファイル名
     name                string
 
@@ -81,6 +87,8 @@ type file_info struct {
     absolute_name       string
 
     stat                Stat
+
+    file_type           File_Type
 
     link_mode           mode_t
 
@@ -98,27 +106,42 @@ type file_info struct {
 }
 
 
-// func (self file_info) print_name_with_quoting(symlink_target bool, stack obstack, start_col size_t) {
+// func (self File_info) print_name_with_quoting(symlink_target bool, stack obstack, start_col size_t) {
 //      var name string
 
      
 // }
 
-type pending struct {
+type Pending struct {
     name              string
     real_name         string
     command_line_arg  bool
-    next             *pending
+    next             *Pending
 }
 
-var program_name string
-var line_length  size_t
+var (
+    program_name string
+    line_length  size_t
+)
 
 func initialize_main(argv []string, argc int) {
 }
 
 func set_program_name(name string) {
     program_name = strings.Replace( filepath.Base( name ), filepath.Ext( name ), "", -1 )
+}
+
+
+func getenv_quoting_style() {
+    quoting_style, exists := os.LookupEnv( "QUOTING_STYLE" )
+    if exists {
+        i := arg_match( quoting_style, quoting_style_args, quoting_style_vals )
+        if 0 <= i {
+            set_quoting_style( nil, quoting_style_vals[i] )
+        } else {
+            error( 0, 0, "ignoring invalid value of environment variable QUOTING_STYLE: %s", quote( quoting_style ) )
+        }
+    }
 }
 
 
@@ -145,7 +168,7 @@ func decode_switches(argv []string, argc int) int {
         format                = many_per_line
         set_quoting_style( nil, escape_quoting_style )
 
-    case LS_LONG_FORMAT*
+    case LS_LONG_FORMAT:
         format                = long_format
         set_quoting_style( nil, escape_quoting_style )
 
@@ -153,24 +176,36 @@ func decode_switches(argv []string, argc int) int {
         abort()
     }
 
-    time_type := time_mtime
-    sort_type := sort_name
+    time_type        = time_mtime
+    sort_type        = sort_name
+    sort_revrse      = false
+    numeric_ids      = false
+    print_block_size = false
+    indicator_style  = none
+    print_inode      = false
+    deferernce       = DEREF_UNDEFINED
+    recursive        = false
+    immediate_dirs   = false
+    ignore_mode      = IGNORE_DEFAULT
+    ignore_patterns  = nil
+    hide_patterns    = nil
+    print_scontext   = false
 
     getenv_quoting_style()
 
     line_length := 80
 
     {
-        raw_columns := os.Getenv( "COLUMNS" )
-        if raw_columns && !set_line_length( raw_columns ) {
+        raw_columns, exists := os.LookupEnv( "COLUMNS" )
+        if exists && !set_line_length( raw_columns ) {
             error( 0, 0, "ignoring invalid width in environment variable COLUMNS: %s", quote( raw_columns) )
         }
     }
 
     {
-        raw_tabsize := os.Getenv( "TABSIZE" )
+        raw_tabsize, exists := os.LookupEnv( "TABSIZE" )
         tabsize      = 8
-        if raw_tabsize {
+        if exists {
             var tmp uintmax_t
 
             tmp, err = strconv.Atoi( raw_tabsize )
@@ -184,7 +219,18 @@ func decode_switches(argv []string, argc int) int {
 
     for {
         c, oi := getopt_long( argc, argv, "abcdfghiklmnopqrstuvw:xABCDFGHI:LNQRST:UXZ1", long_options, oi )
-	
+
+        if c == -1 {
+            break
+        }
+
+        switch c {
+        case 'a':
+            ignore_mode = IGNORE_MINIMAL
+
+        case 'b':
+            set_quoting_style( nil, escape_quoting_style )
+        }
     }
 
     return 0
@@ -193,7 +239,7 @@ func decode_switches(argv []string, argc int) int {
 func main() {
     var (
         i            int
-        this_pend    pending
+        this_pend    Pending
         amount_files int
     )
 
@@ -210,5 +256,5 @@ func main() {
     print_dir_name := true
     // pending_dirs   := nil
 
-    i = decode_switches( os.Args[1:], len( os.Args ) - 1  )
+    i = decode_switches( os.Args[1:], len( os.Args ) - 1 )
 }
